@@ -21,11 +21,15 @@ public:
         n = 0;
         K.resize(M-1, 0);
         P.resize(M, nullptr);
+        if(P.size() == 2) {
+            cout<<"check"<<endl;
+        }
         A.resize(M-1, nullptr);
     }
 
     int getN() { return n; }
     int getM() { return m; }
+    int getPSize() { return P.size(); }
     vector<int> getK() { return K; }
     int getK(int idx) { return K[idx]; }
     void setK(int idx, int key) {
@@ -62,7 +66,10 @@ public:
             }
         }
         P[n] = newNode;
-        P.pop_back();
+    }
+    void deleteP(int idx) {
+        P.erase(P.begin() + idx);
+        P.push_back(nullptr);
     }
     vector<int*> getA() { return A; }
     int* getA(int idx) { return A[idx]; }
@@ -107,24 +114,29 @@ public:
         }
         P[n] = toCopy->getP(toCopy->getN());
     }
-    NODE* bestSibling(int idx) {
+    NODE* bestSibling(int idx, int& LorR) {
         int ln = -1;
         int rn = -1;
         if(idx>0) ln = P[idx-1]->getN();
-        if(idx<K.size()) rn = P[idx+1]->getN();
+        if(idx<n) rn = P[idx+1]->getN();
         if(ln==-1 && rn == -1) {
+            LorR = -1;
             return nullptr;
         }
         else if(ln == -1) {
+            LorR = 0;
             return P[idx+1];
         }
         else if(rn == -1) {
+            LorR = 1;
             return P[idx-1];
         }
         else if(ln>=rn) {
+            LorR = 1;
             return P[idx-1];
         }
         else {
+            LorR = 0;
             return P[idx+1];
         }
     }
@@ -158,7 +170,6 @@ int binarySearch(vector<int> K, int n, int target) {
     int low = 0;
     int high = n - 1;
     int mid;
-    int check = -1;
 
     while(low <= high) {
         mid = (low + high) / 2;
@@ -168,11 +179,9 @@ int binarySearch(vector<int> K, int n, int target) {
         }
         else if(K[mid] > target) {
             high = mid - 1;
-            check = 0;
         }
         else if(K[mid] < target) {
             low = mid + 1;
-            check = 1;
         }
     }
     return low;
@@ -184,7 +193,6 @@ void insertBT(BT *T, int m, int newKey) {
     stack<NODE*> st;
     stack<int> ist;
     int i;
-    int tt = newKey;
 
     while(!x->isNull()) {
         i = binarySearch(x->getK(), x->getN(), newKey);
@@ -224,7 +232,9 @@ void insertBT(BT *T, int m, int newKey) {
         delete tempNode;
     }
 
-    T->setRoot(new NODE(m));
+    NODE* toRoot = new NODE(m);
+
+    T->setRoot(toRoot);
     T->getRoot()->insertK(newKey);
     T->getRoot()->insertP(x);
     T->getRoot()->insertP(y);
@@ -278,44 +288,52 @@ void deleteBT(BT *T, int m, int oldKey) {
 
         y = st.top(); st.pop();
         i = ist.top(); ist.pop();
-        bestSibling = y->bestSibling(i);
+        int LorR = -1;
+        bestSibling = y->bestSibling(i, LorR);
+        int yi = i - LorR;
 
         if(bestSibling->getN() > (m-1)/2) {
-            x->insertK(y->getK(i));
-            if(y->getK(i) < bestSibling->getK(0)) {
-                y->setK(i, bestSibling->getK(0));
+            x->insertK(y->getK(yi));
+            if(y->getK(yi) < bestSibling->getK(0)) {
+                y->setK(yi, bestSibling->getK(0));
                 bestSibling->deleteK(0);
+                x->insertP(bestSibling->getP(0));
+                bestSibling->deleteP(0);
             }
             else {
-                y->setK(i, bestSibling->getK(bestSibling->getN()-1));
+                y->setK(yi, bestSibling->getK(bestSibling->getN()-1));
                 bestSibling->deleteK(bestSibling->getN()-1);
+                x->insertP(bestSibling->getP(bestSibling->getN()));
+                bestSibling->deleteP(bestSibling->getN());
             }
             break;
         }
 
-        if(bestSibling->getK(0) < x->getK(0)) {
-            bestSibling->insertK(y->getK(i));
+        if(bestSibling->getK(0) < y->getK(yi)) {
+            bestSibling->insertK(y->getK(yi));
             vector<int> mergeK = x->getK();
             vector<NODE*> mergeP = x->getP();
-            for(int i=0; i<mergeK.size(); i++) {
+            for(int i=0; i<x->getN(); i++) {
                 bestSibling->insertK(mergeK[i]);
             }
-            for(int i=0; i<mergeP.size(); i++) {
+            for(int i=0; i<=x->getN(); i++) {
                 bestSibling->insertP(mergeP[i]);
             }
-            delete x;
+            y->deleteK(yi);
+            y->deleteP(yi+1);
         }
         else {
-            x->insertK(y->getK(i));
+            x->insertK(y->getK(yi));
             vector<int> mergeK = bestSibling->getK();
             vector<NODE*> mergeP = bestSibling->getP();
-            for(int i=0; i<mergeK.size(); i++) {
+            for(int i=0; i<bestSibling->getN(); i++) {
                 x->insertK(mergeK[i]);
             }
-            for(int i=0; i<mergeP.size(); i++) {
+            for(int i=0; i<=bestSibling->getN(); i++) {
                 x->insertP(mergeP[i]);
             }
-            delete bestSibling;
+            y->deleteK(yi);
+            y->deleteP(yi+1);
         }
 
         x = y;
@@ -331,16 +349,16 @@ void inorder(NODE *N) {
     if(N == nullptr) return;
     for(int i=0; i<N->getN(); i++) {
         if(N->getP(i) != nullptr) {
-            cout<<"down: ";
+            // cout<<"down: ";
             inorder(N->getP(i));
         }
         cout<<N->getK(i)<<" ";
     }
     if(N->getP(N->getN()) != nullptr) {
-        cout<<"down: ";
+        // cout<<"down: ";
         inorder(N->getP(N->getN()));
     }
-    cout<<"up: ";
+    // cout<<"up: ";
 }
 
 void inorderBT(BT *T) {
