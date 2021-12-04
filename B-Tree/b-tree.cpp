@@ -106,11 +106,11 @@ public:
         A.assign(m-1, nullptr);
         P.clear();
         P.assign(m, nullptr);
-        n = toCopy->getN()/2;
+        n = toCopy->getN() - toCopy->getN()/2 - 1;
         for(int i=0; i<n; i++) {
-            K[i] = toCopy->getK(i + n + 1);
-            A[i] = toCopy->getA(i + n + 1);
-            P[i] = toCopy->getP(i + n + 1);
+            K[i] = toCopy->getK(toCopy->getN()/2 + i + 1);
+            A[i] = toCopy->getA(toCopy->getN()/2 + i + 1);
+            P[i] = toCopy->getP(toCopy->getN()/2 + i + 1);
         }
         P[n] = toCopy->getP(toCopy->getN());
     }
@@ -303,8 +303,8 @@ void deleteBT(BT *T, int m, int oldKey) {
             else {
                 y->setK(yi, bestSibling->getK(bestSibling->getN()-1));
                 bestSibling->deleteK(bestSibling->getN()-1);
-                x->insertP(bestSibling->getP(bestSibling->getN()));
-                bestSibling->deleteP(bestSibling->getN());
+                x->insertP(bestSibling->getP(bestSibling->getN()+1));
+                bestSibling->deleteP(bestSibling->getN()+1);
             }
             break;
         }
@@ -349,16 +349,13 @@ void inorder(NODE *N) {
     if(N == nullptr) return;
     for(int i=0; i<N->getN(); i++) {
         if(N->getP(i) != nullptr) {
-            // cout<<"down: ";
             inorder(N->getP(i));
         }
         cout<<N->getK(i)<<" ";
     }
     if(N->getP(N->getN()) != nullptr) {
-        // cout<<"down: ";
         inorder(N->getP(N->getN()));
     }
-    // cout<<"up: ";
 }
 
 void inorderBT(BT *T) {
@@ -379,11 +376,6 @@ int main() {
     }
     inputInsert.close();
 
-    for(int i=0; i<insertNums.size(); i++) {
-        insertBT(T, 3, insertNums[i]);
-        inorderBT(T);
-    }
-
     ifstream inputDelete("deleteSequence.txt");
     while(!inputDelete.eof()) {
         int n;
@@ -392,12 +384,31 @@ int main() {
     }
     inputDelete.close();
 
+    // m = 3
+
+    for(int i=0; i<insertNums.size(); i++) {
+        insertBT(T, 3, insertNums[i]);
+        inorderBT(T);
+    }
+
     for(int i=0; i<deleteNums.size(); i++) {
         deleteBT(T, 3, deleteNums[i]);
         inorderBT(T);
     }
 
     T = new BT();
+
+    // m = 4
+
+    for(int i=0; i<insertNums.size(); i++) {
+        insertBT(T, 4, insertNums[i]);
+        inorderBT(T);
+    }
+
+    for(int i=0; i<deleteNums.size(); i++) {
+        deleteBT(T, 4, deleteNums[i]);
+        inorderBT(T);
+    }
 
     return 0;
 }
