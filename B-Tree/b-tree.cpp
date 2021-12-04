@@ -365,49 +365,29 @@ void inorderBT(BT *T) {
 
 int main() {
     BT* T = new BT();
-    vector<int> insertNums;
-    vector<int> deleteNums;
 
-    ifstream inputInsert("insertSequence.txt");
-    while(!inputInsert.eof()) {
-        int n;
-        inputInsert>>n;
-        insertNums.push_back(n);
-    }
-    inputInsert.close();
+    ifstream inputInsert;
+    ifstream inputDelete;
 
-    ifstream inputDelete("deleteSequence.txt");
-    while(!inputDelete.eof()) {
-        int n;
-        inputDelete>>n;
-        deleteNums.push_back(n);
-    }
-    inputDelete.close();
+    for(int m=3; m<=4; m++) {
+        T = new BT();
+        inputInsert.open("insertSequence.txt");
+        while(!inputInsert.eof()) {
+            int n;
+            inputInsert>>n;
+            insertBT(T, m, n);
+            inorderBT(T);
+        }
+        inputInsert.close();
 
-    // m = 3
-
-    for(int i=0; i<insertNums.size(); i++) {
-        insertBT(T, 3, insertNums[i]);
-        inorderBT(T);
-    }
-
-    for(int i=0; i<deleteNums.size(); i++) {
-        deleteBT(T, 3, deleteNums[i]);
-        inorderBT(T);
-    }
-
-    T = new BT();
-
-    // m = 4
-
-    for(int i=0; i<insertNums.size(); i++) {
-        insertBT(T, 4, insertNums[i]);
-        inorderBT(T);
-    }
-
-    for(int i=0; i<deleteNums.size(); i++) {
-        deleteBT(T, 4, deleteNums[i]);
-        inorderBT(T);
+        inputDelete.open("deleteSequence.txt");
+        while(!inputDelete.eof()) {
+            int n;
+            inputDelete>>n;
+            deleteBT(T, m, n);
+            inorderBT(T);
+        }
+        inputDelete.close();
     }
 
     return 0;
